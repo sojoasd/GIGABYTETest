@@ -1,0 +1,90 @@
+<!-- html -->
+<div class="form-group">
+	@Html.LabelFor(model => model.MyCountrys, new { @class = "control-label col-md-2" })
+	<div class="col-md-5">
+		@Html.DropDownListFor(model => model.MyCountrys, ViewBag.MyCountrysList as SelectList, string.Empty, new Dictionary<string, object> { { "id", "MyCountrys" }, { "class", "form-control" } })
+	</div>
+</div>
+
+<div class="form-group">
+	@Html.LabelFor(model => model.MyCategorys, new { @class = "control-label col-md-2" })
+	<div class="col-md-5">
+		<select class="form-control" id="MyCategorys" name="MyCategorys">
+			<option value=""></option>
+		</select>
+	</div>
+</div>
+
+<div id="ShowStores"></div>
+<!-- html -->
+
+<script>
+$(function () {
+
+	$(document).on('change', '#MyCountrys, #MyCategorys', function (e) {
+		var TargetID = e.currentTarget.id;
+		if (TargetID === "MyCountrys")
+		{
+			$('#MyCategorys').find('option').remove();
+		}
+
+		var CouID = $('#MyCountrys').val();
+		var CatID = $('#MyCategorys').val();
+		GetCondValueAjaxData(CouID, CatID, function (data) {
+			console.log(data);
+
+			if (data.ErrorType === 1)
+			{
+				alert(data.ErrorMsg);
+			}
+
+			if (data.ErrorType === 2)
+			{
+				var JsonObj = TransJsonObj(data.CatJsonStr);
+				console.log(JsonObj);
+
+				var optionStr = '<option value=""></option>';
+				for (var i = 0; i < JsonObj.length; i++) {
+					optionStr += '<option value="' + JsonObj[i].ID + '">' + JsonObj[i].Name + '</option>'
+				}
+
+				$('#MyCategorys').append(optionStr);
+			}
+			
+			if (data.IsSuccess === true)
+			{
+				var JsonObj = TransJsonObj(data.StoreJsonStr);
+				var divStr = "";
+				for (var i = 0; i < JsonObj.length; i++) {
+					divStr += '<div><div style="border-style:groove;text-align:center; width:300px; height:50px; float:left"><h3>Logo</h3></div><div style="float: left"><p>' + JsonObj[i].Name + '</p><p>' + JsonObj[i].Tel + '</p></div></div><br>'
+				}
+
+				$('#ShowStores').append(divStr);
+			}
+		});
+	});
+
+	var GetCondValueAjaxData = function (CouID, CatID, callback) {
+		$.ajax({
+			"dataType": 'json',
+			"async": true,
+			"type": "POST",
+			"url": '/ApiCommon/GetCatList',
+			"data": { CouID: CouID, CatID: CatID },
+			"success": function (str) {
+				var JsonObj = TransJsonObj(str);
+				callback(JsonObj);
+			}
+		});
+	};
+
+	var TransJsonObj = function (str) {
+		str = str.replace(/&quot;/g, '"');
+		str = str.replace(/(?:\r\n|\r|\n)/g, '');
+		var JsonObj = JSON.parse(str);
+
+		return JsonObj;
+	}
+
+});
+</script>
